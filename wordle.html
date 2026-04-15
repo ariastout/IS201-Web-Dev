@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo Wordle</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #121213;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .game-container {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 2rem;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #bdbdbd;
+      font-size: 0.95rem;
+    }
+
+    #board {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .tile {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border: 2px solid #3a3a3c;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      background-color: #121213;
+    }
+
+    .correct {
+      background-color: #538d4e;
+      border-color: #538d4e;
+    }
+
+    .present {
+      background-color: #b59f3b;
+      border-color: #b59f3b;
+    }
+
+    .absent {
+      background-color: #3a3a3c;
+      border-color: #3a3a3c;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    #guessInput {
+      padding: 12px;
+      font-size: 1rem;
+      width: 180px;
+      border: none;
+      border-radius: 8px;
+      text-transform: lowercase;
+    }
+
+    button {
+      padding: 12px 18px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #guessBtn {
+      background-color: white;
+      color: black;
+    }
+
+    #restartBtn {
+      background-color: #2d2d2f;
+      color: white;
+    }
+
+    #message {
+      min-height: 24px;
+      font-size: 1rem;
+      margin-bottom: 10px;
+      color: #d7dadc;
+    }
+
+    .small-note {
+      color: #8a8a8d;
+      font-size: 0.85rem;
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 500px) {
+      .tile {
+        font-size: 1.4rem;
+      }
+
+      #guessInput {
+        width: 150px;
+      }
+    }
+      .home-btn,
+      .home-btn:visited,
+      .home-btn:hover,
+      .home-btn:active {
+        display: inline-block;
+        margin-bottom: 15px;
+        padding: 10px 16px;
+        background-color: #2d2d2f;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: bold;
+      }
+
+      .home-btn:hover {
+        background-color: #444;
+      }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Photo Wordle</h1>
+    <p class="subtitle">Guess the 5-letter word in 6 tries</p>
+      
+    <a href="index.html" class="home-btn">← Back to Home</a>
+
+    <div id="board"></div>
+
+    <div class="controls">
+      <input
+        type="text"
+        id="guessInput"
+        maxlength="5"
+        placeholder="enter word"
+        autocomplete="off"
+      />
+      <button id="guessBtn">Guess</button>
+      <button id="restartBtn">Restart</button>
+    </div>
+
+    <p id="message"></p>
+    <p class="small-note">Only included dictionary words are allowed.</p>
+  </div>
+
+  <script>
+    const answer = "photo";
+    const maxGuesses = 6;
+    const wordLength = 5;
+
+    // Included dictionary list of real 5-letter words.
+    // You can add more words here anytime.
+    const validWords = [
+      "about","above","abuse","actor","acute","admit","adopt","adult","after","again",
+      "agent","agree","ahead","alarm","album","alert","alike","alive","allow","alone",
+      "along","alter","among","anger","angle","angry","apart","apple","apply","arena",
+      "argue","arise","array","aside","asset","audio","audit","avoid","award","aware",
+      "badly","baker","bases","basic","beach","began","begin","begun","being","below",
+      "bench","billy","birth","black","blame","blind","block","blood","board","boost",
+      "booth","bound","brain","brand","bread","break","breed","brief","bring","broad",
+      "broke","brown","build","built","buyer","cable","calif","carry","catch","cause",
+      "chain","chair","chart","chase","cheap","check","chest","chief","child","china",
+      "chose","civil","claim","class","clean","clear","click","clock","close","coach",
+      "coast","could","count","court","cover","craft","crash","cream","crime","cross",
+      "crowd","crown","curve","cycle","daily","dance","dated","dealt","death","debut",
+      "delay","depth","doing","doubt","dozen","draft","drama","drawn","dream","dress",
+      "drill","drink","drive","drove","dying","eager","early","earth","eight","elite",
+      "empty","enemy","enjoy","enter","entry","equal","error","event","every","exact",
+      "exist","extra","faith","false","fault","fiber","field","fifth","fifty","fight",
+      "final","first","fixed","flash","fleet","floor","fluid","focus","force","forth",
+      "forty","forum","found","frame","frank","fraud","fresh","front","fruit","fully",
+      "funny","giant","given","glass","globe","going","grace","grade","grand","grant",
+      "grass","great","green","gross","group","grown","guard","guess","guest","guide",
+      "happy","heart","heavy","hence","henry","horse","hotel","house","human","ideal",
+      "image","index","inner","input","issue","japan","jimmy","joint","jones","judge",
+      "known","label","large","laser","later","laugh","layer","learn","lease","least",
+      "leave","legal","level","light","limit","links","lives","local","logic","loose",
+      "lower","lucky","lunch","lying","magic","major","maker","march","match","maybe",
+      "mayor","meant","media","metal","might","minor","minus","mixed","model","money",
+      "month","moral","motor","mount","mouse","mouth","movie","music","needs","never",
+      "newly","night","noise","north","novel","nurse","occur","ocean","offer","often",
+      "order","other","ought","paint","panel","paper","party","peace","peter","phase",
+      "phone","photo","piece","pilot","pitch","place","plain","plane","plant","plate",
+      "point","pound","power","press","price","pride","prime","print","prior","prize",
+      "proof","proud","prove","queen","quick","quiet","quite","radio","raise","range",
+      "rapid","ratio","reach","ready","refer","right","rival","river","rough","round",
+      "route","royal","rural","scale","scene","scope","score","sense","serve","seven",
+      "shall","shape","share","sharp","sheet","shelf","shell","shift","shirt","shock",
+      "shoot","short","shown","sight","since","skill","sleep","slide","small","smart",
+      "smile","smith","smoke","solid","solve","sorry","sound","south","space","spare",
+      "speak","speed","spend","spent","split","spoke","sport","staff","stage","stake",
+      "stand","start","state","steam","steel","stick","still","stock","stone","stood",
+      "store","storm","story","strip","stuck","study","stuff","style","sugar","suite",
+      "super","sweet","table","taken","taste","taxes","teach","teeth","terry","texas",
+      "thank","theft","their","theme","there","these","thick","thing","think","third",
+      "those","three","throw","tight","times","tired","title","today","topic","total",
+      "touch","tough","tower","track","trade","train","treat","trend","trial","tried",
+      "tries","truck","truly","trust","truth","twice","under","union","unity","until",
+      "upper","upset","urban","usage","usual","valid","value","video","virus","visit",
+      "vital","voice","waste","watch","water","wheel","where","which","while","white",
+      "whole","whose","woman","women","world","worry","worse","worst","worth","would",
+      "wound","write","wrong","wrote","yield","young","youth"
+    ];
+
+    const board = document.getElementById("board");
+    const guessInput = document.getElementById("guessInput");
+    const guessBtn = document.getElementById("guessBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const message = document.getElementById("message");
+
+    let currentRow = 0;
+    let gameOver = false;
+
+    function createBoard() {
+      board.innerHTML = "";
+
+      for (let i = 0; i < maxGuesses; i++) {
+        const row = document.createElement("div");
+        row.classList.add("row");
+
+        for (let j = 0; j < wordLength; j++) {
+          const tile = document.createElement("div");
+          tile.classList.add("tile");
+          row.appendChild(tile);
+        }
+
+        board.appendChild(row);
+      }
+    }
+
+    function showMessage(text) {
+      message.textContent = text;
+    }
+
+    function resetGame() {
+      currentRow = 0;
+      gameOver = false;
+      guessInput.value = "";
+      guessInput.disabled = false;
+      guessBtn.disabled = false;
+      showMessage("");
+      createBoard();
+      guessInput.focus();
+    }
+
+    function evaluateGuess(guess) {
+      const row = board.children[currentRow];
+      const tiles = row.children;
+
+      const answerLetters = answer.split("");
+      const guessLetters = guess.split("");
+      const tileStates = Array(wordLength).fill("absent");
+
+      // First pass: correct spots
+      for (let i = 0; i < wordLength; i++) {
+        if (guessLetters[i] === answerLetters[i]) {
+          tileStates[i] = "correct";
+          answerLetters[i] = null;
+          guessLetters[i] = null;
+        }
+      }
+
+      // Second pass: right letter, wrong spot
+      for (let i = 0; i < wordLength; i++) {
+        if (guessLetters[i] && answerLetters.includes(guessLetters[i])) {
+          tileStates[i] = "present";
+          answerLetters[answerLetters.indexOf(guessLetters[i])] = null;
+        }
+      }
+
+      for (let i = 0; i < wordLength; i++) {
+        tiles[i].textContent = guess[i];
+        tiles[i].classList.add(tileStates[i]);
+      }
+    }
+
+    function submitGuess() {
+      if (gameOver) return;
+
+      const guess = guessInput.value.toLowerCase().trim();
+
+      if (guess.length !== wordLength) {
+        showMessage("Enter a 5-letter word.");
+        return;
+      }
+
+      if (!/^[a-z]+$/.test(guess)) {
+        showMessage("Use letters only.");
+        return;
+      }
+
+      if (!validWords.includes(guess)) {
+        showMessage("That word is not in the dictionary list.");
+        return;
+      }
+
+      evaluateGuess(guess);
+
+      if (guess === answer) {
+        showMessage("You got it!");
+        gameOver = true;
+        guessInput.disabled = true;
+        guessBtn.disabled = true;
+        return;
+      }
+
+      currentRow++;
+      guessInput.value = "";
+
+      if (currentRow >= maxGuesses) {
+        showMessage('Game over. The word was "photo".');
+        gameOver = true;
+        guessInput.disabled = true;
+        guessBtn.disabled = true;
+      } else {
+        showMessage("");
+      }
+    }
+
+    guessBtn.addEventListener("click", submitGuess);
+
+    restartBtn.addEventListener("click", resetGame);
+
+    guessInput.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        submitGuess();
+      }
+    });
+
+    createBoard();
+    guessInput.focus();
+  </script>
+</body>
+</html>
